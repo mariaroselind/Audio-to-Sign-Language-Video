@@ -1,0 +1,9 @@
+{
+  "glosses": ["ALL", "YES", "COOL"],
+  "emotion": "HAPPY",
+  "nmm": {
+    "eyebrows": "raised",
+    "head": "forward",
+    "mouth": "smile"
+  }
+}
