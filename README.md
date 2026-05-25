@@ -155,8 +155,3 @@ pip install -r requirements.txt
 - Sangeetha K
 - Siona Shaji Zachrias
 
----
-
-# License
-
-This project is developed for educational and research purposes.
