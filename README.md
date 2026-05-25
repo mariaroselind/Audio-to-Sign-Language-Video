@@ -130,14 +130,6 @@ pip install -r requirements.txt
 
 ---
 
-# Run the Project
-
-```bash
-python app.py
-```
-
----
-
 # Future Improvements
 
 - Real-time deployment
