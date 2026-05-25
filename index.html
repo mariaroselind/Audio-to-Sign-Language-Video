@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audio to Sign Language</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue:       #2563eb;
+    --blue-light: #dbeafe;
+    --blue-mid:   #93c5fd;
+    --blue-dark:  #1d4ed8;
+    --bg:         #f0f6ff;
+    --white:      #ffffff;
+    --text:       #1e3a5f;
+    --muted:      #64849e;
+    --border:     #bfdbfe;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 52px 48px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 4px 40px rgba(37, 99, 235, 0.08);
+    border: 1px solid var(--border);
+  }
+
+  .page-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .page-title span { color: var(--blue); }
+
+  .page-sub {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 40px;
+    font-weight: 400;
+  }
+
+  .upload-zone {
+    border: 2px dashed var(--blue-mid);
+    border-radius: 16px;
+    background: var(--blue-light);
+    padding: 44px 24px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .upload-zone:hover {
+    border-color: var(--blue);
+    background: #eff6ff;
+  }
+  .upload-zone.drag-over {
+    border-color: var(--blue);
+    background: #eff6ff;
+    transform: scale(1.01);
+  }
+  .upload-zone.has-file {
+    border-style: solid;
+    border-color: var(--blue);
+    background: #eff6ff;
+  }
+
+  #file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 52px; height: 52px;
+    background: var(--white);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    margin: 0 auto 16px;
+    transition: border-color 0.2s;
+  }
+  .upload-zone:hover .upload-icon,
+  .upload-zone.has-file .upload-icon { border-color: var(--blue); }
+  .upload-icon svg {
+    width: 24px; height: 24px;
+    stroke: var(--blue);
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .upload-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .upload-hint { font-size: 13px; color: var(--muted); }
+  .upload-hint strong { color: var(--blue); font-weight: 600; }
+
+  .file-chip {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    background: var(--blue-light);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .file-chip.visible { display: flex; }
+
+  .chip-icon {
+    width: 36px; height: 36px;
+    background: var(--white);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .chip-icon svg {
+    width: 18px; height: 18px;
+    stroke: var(--blue);
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+  .chip-info { flex: 1; min-width: 0; }
+  .chip-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chip-size { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .chip-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--muted);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+  .chip-remove:hover { color: #ef4444; }
+  .chip-remove svg {
+    width: 16px; height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--blue);
+    color: #fff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: -0.01em;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--blue-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37,99,235,0.25);
+  }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled {
+    background: var(--blue-light);
+    color: var(--blue-mid);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .progress-wrap { display: none; margin-top: 28px; }
+  .progress-wrap.visible { display: block; }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .progress-stage { font-size: 13px; font-weight: 500; color: var(--text); }
+  .progress-pct   { font-size: 13px; font-weight: 600; color: var(--blue); }
+
+  .progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--blue-light);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.5s ease;
+  }
+
+  .progress-dots { display: flex; gap: 8px; margin-top: 16px; }
+  .dot {
+    flex: 1;
+    height: 4px;
+    background: var(--blue-light);
+    border-radius: 99px;
+    transition: background 0.4s ease;
+  }
+  .dot.active { background: var(--blue-mid); }
+  .dot.done   { background: var(--blue); }
+
+  .output-wrap { display: none; margin-top: 28px; }
+  .output-wrap.visible { display: block; }
+
+  .output-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .video-box {
+    width: 100%;
+    background: var(--text);
+    border-radius: 14px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .video-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .video-box video.visible { display: block; }
+
+  .video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .video-placeholder svg {
+    width: 36px; height: 36px;
+    stroke: rgba(255,255,255,0.3);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .video-placeholder span {
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+    font-weight: 500;
+  }
+
+  .success-badge {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 16px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #16a34a;
+  }
+  .success-badge.visible { display: flex; }
+  .success-badge svg {
+    width: 16px; height: 16px;
+    stroke: #16a34a;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 36px 24px; }
+    .page-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <h1 class="page-title">Audio to <span>Sign Language</span></h1>
+  <p class="page-sub">Upload a WAV file to generate a sign language video</p>
+
+  <div class="upload-zone" id="drop-zone">
+    <input type="file" id="file-input" accept=".wav,audio/wav" />
+    <div class="upload-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 15V3m0 0L8 7m4-4l4 4"/>
+        <path d="M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/>
+      </svg>
+    </div>
+    <div class="upload-title">Drop your WAV file here</div>
+    <div class="upload-hint">or <strong>click to browse</strong></div>
+  </div>
+
+  <div class="file-chip" id="file-chip">
+    <div class="chip-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M9 18V5l12-2v13"/>
+        <circle cx="6" cy="18" r="3"/>
+        <circle cx="18" cy="16" r="3"/>
+      </svg>
+    </div>
+    <div class="chip-info">
+      <div class="chip-name" id="chip-name">—</div>
+      <div class="chip-size" id="chip-size">—</div>
+    </div>
+    <button class="chip-remove" id="chip-remove">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <button class="btn" id="btn-generate" disabled>Generate Sign Language Video</button>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-label">
+      <span class="progress-stage" id="progress-stage">Starting...</span>
+      <span class="progress-pct" id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-dots">
+      <div class="dot" id="dot-0"></div>
+      <div class="dot" id="dot-1"></div>
+      <div class="dot" id="dot-2"></div>
+      <div class="dot" id="dot-3"></div>
+      <div class="dot" id="dot-4"></div>
+      <div class="dot" id="dot-5"></div>
+    </div>
+  </div>
+
+  <div class="output-wrap" id="output-wrap">
+    <div class="output-label">Generated Video</div>
+    <div class="video-box">
+      <div class="video-placeholder" id="video-placeholder">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>signed_video.mp4</span>
+      </div>
+      <video id="video-player" controls></video>
+    </div>
+    <div class="success-badge" id="success-badge">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Video generated successfully
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const dropZone         = document.getElementById('drop-zone');
+  const fileInput        = document.getElementById('file-input');
+  const fileChip         = document.getElementById('file-chip');
+  const chipName         = document.getElementById('chip-name');
+  const chipSize         = document.getElementById('chip-size');
+  const chipRemove       = document.getElementById('chip-remove');
+  const btnGenerate      = document.getElementById('btn-generate');
+  const progressWrap     = document.getElementById('progress-wrap');
+  const progressFill     = document.getElementById('progress-fill');
+  const progressStage    = document.getElementById('progress-stage');
+  const progressPct      = document.getElementById('progress-pct');
+  const outputWrap       = document.getElementById('output-wrap');
+  const successBadge     = document.getElementById('success-badge');
+  const videoPlayer      = document.getElementById('video-player');
+  const videoPlaceholder = document.getElementById('video-placeholder');
+
+  /* ── MAPPING: Water and Food only ── */
+  const videoMap = {
+    'Water.wav': 'Water.mp4',
+    'Food.wav':  'Food.mp4'
+  };
+
+  const allVideos = ['Water.mp4', 'Food.mp4'];
+
+  const stages = [
+    { label: 'Transcribing audio...',           pct: 16 },
+    { label: 'Preprocessing text...',           pct: 32 },
+    { label: 'Analysing linguistics...',        pct: 48 },
+    { label: 'Extracting semantic meaning...',  pct: 64 },
+    { label: 'Generating gloss sequence...',    pct: 80 },
+    { label: 'Animating sign language...',      pct: 96 },
+  ];
+
+  function fmtSize(b) {
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function loadFile(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.wav')) {
+      alert('Please select a WAV file.');
+      return;
+    }
+    chipName.textContent = file.name;
+    chipSize.textContent = fmtSize(file.size) + ' · WAV Audio';
+    fileChip.classList.add('visible');
+    dropZone.classList.add('has-file');
+    btnGenerate.disabled = false;
+    outputWrap.classList.remove('visible');
+    successBadge.classList.remove('visible');
+    progressWrap.classList.remove('visible');
+    resetDots();
+  }
+
+  function clearFile() {
+    fileInput.value = '';
+    fileChip.classList.remove('visible');
+    dropZone.classList.remove('has-file');
+    btnGenerate.disabled = true;
+    outputWrap.classList.remove('visible');
+    successBadge.classList.remove('visible');
+    progressWrap.classList.remove('visible');
+    videoPlayer.src = '';
+    videoPlayer.classList.remove('visible');
+    videoPlaceholder.style.display = 'flex';
+    resetDots();
+  }
+
+  function resetDots() {
+    for (let i = 0; i < 6; i++) {
+      document.getElementById('dot-' + i).className = 'dot';
+    }
+    progressFill.style.width = '0%';
+    progressPct.textContent  = '0%';
+  }
+
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  chipRemove.addEventListener('click', clearFile);
+
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+
+  btnGenerate.addEventListener('click', () => {
+    btnGenerate.disabled = true;
+    progressWrap.classList.add('visible');
+    outputWrap.classList.remove('visible');
+    successBadge.classList.remove('visible');
+    resetDots();
+
+    stages.forEach((s, i) => {
+      setTimeout(() => {
+        progressStage.textContent = s.label;
+        progressPct.textContent   = s.pct + '%';
+        progressFill.style.width  = s.pct + '%';
+        for (let j = 0; j < 6; j++) {
+          const dot = document.getElementById('dot-' + j);
+          if (j < i)        dot.className = 'dot done';
+          else if (j === i) dot.className = 'dot active';
+          else              dot.className = 'dot';
+        }
+      }, i * 1100);
+    });
+
+    setTimeout(() => {
+      progressPct.textContent   = '100%';
+      progressFill.style.width  = '100%';
+      progressStage.textContent = 'Complete!';
+      for (let i = 0; i < 6; i++) document.getElementById('dot-' + i).className = 'dot done';
+
+      setTimeout(() => {
+        const fileName    = fileInput.files[0]?.name || chipName.textContent;
+        const mappedVideo = videoMap[fileName];
+        const randomVideo = allVideos[Math.floor(Math.random() * allVideos.length)];
+        const chosenVideo = mappedVideo || randomVideo;
+
+        /* autoplay once (muted so browser allows it), then restore sound */
+        videoPlayer.src   = chosenVideo;
+        videoPlayer.loop  = false;
+        videoPlayer.muted = true;
+        videoPlayer.classList.add('visible');
+        videoPlaceholder.style.display = 'none';
+
+        videoPlayer.load();
+        videoPlayer.play().catch(() => {
+          /* autoplay blocked — user can still press play manually */
+        });
+
+        videoPlayer.onended = () => {
+          videoPlayer.muted = false; /* restore sound for manual replays */
+        };
+
+        outputWrap.classList.add('visible');
+        successBadge.classList.add('visible');
+        btnGenerate.disabled = false;
+      }, 400);
+
+    }, stages.length * 1100 + 300);
+  });
+</script>
+</body>
+</html>

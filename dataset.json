@@ -1,0 +1,14 @@
+[
+  {
+    "input": "<AGENT> I <ACTION> GO <LOCATION> COLLEGE <TIME> TOMORROW",
+    "output": "TOMORROW I GO COLLEGE"
+  },
+  {
+    "input": "<AGENT> I <NEG> TRUE <ACTION> LIKE <PATIENT> FOOD",
+    "output": "I LIKE FOOD NOT"
+  },
+  {
+    "input": "<TIME> YESTERDAY <AGENT> SHE <ACTION> BUY <PATIENT> BOOK",
+    "output": "YESTERDAY SHE BUY BOOK"
+  }
+]
